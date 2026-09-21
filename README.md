@@ -167,9 +167,9 @@ describes the two layers, and I saw it happen.
 
 ## How I Used AI
 
-I used Claude Code (in VS Code) to do most of the Unit 1 work in this repo,
-including the questions, criteria, chunker and this write-up. The two moments
-below are the ones where its first output needed correcting.
+I used Claude Code (in VS Code) to do most of the breaking down originally. 
+I had AI breakdown my tasks in bite size pieces so that I can work incrementally
+without interrupt or confusion.
 
 **1.** I asked Claude to write the chunker after reading the corpus. Its first
 draft packed a too-long paragraph into chunks by sentence but joined every
