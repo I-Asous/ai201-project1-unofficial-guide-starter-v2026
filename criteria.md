@@ -23,8 +23,13 @@ For at least 4 of my 5 test questions, the retrieved chunks include one that
 contains the answer.
 
 **Why this target:**
-<!-- e.g. "One of my questions is about a topic only two documents mention, so
-     I expect that one to be hard." -->
+Most of my corpus is one post per topic, so a good retriever should land on the
+right post for a plain question. The risk is the near-duplicates: seven
+buildings have laundry posts that differ only in their prices, and every course
+has three posts (overview, exams, workload). Two of my five questions (Aldridge
+laundry, CS 340 hours) are aimed at exactly that, so I expect them to be the
+ones that miss. 4 of 5 lets me miss one of those; 5 of 5 would be a target I
+have no evidence I can hit, and 3 of 5 would forgive missing both.
 
 ---
 
@@ -33,8 +38,11 @@ contains the answer.
 Every answer the system produces names at least one source document.
 
 **Why this target:**
-<!-- Why all five and not four? What about your setup makes that achievable —
-     or what would have to go wrong for it not to be? -->
+The prompt in generate.py labels every chunk `[from filename]`, and the gate
+refuses before the model runs when nothing is close, so a refusal is the only
+answer that legitimately has no source. That makes all five achievable, not four
+of five: the only way to miss is the model ignoring the labels, and that is a
+prompt failure I would want to see rather than budget for.
 
 ---
 
@@ -50,8 +58,11 @@ in at least 4 of 5 tries.
      just keep five of them, or the "4 of 5" above has nothing to be 4 of. -->
 
 **Why this target:**
-<!-- What did your distances look like when you set the cutoff in Milestone 4?
-     Was there a clean gap, or did the two groups overlap? -->
+Written before I measured anything. The out-of-scope questions (Mongolia, diesel
+engines, the World Cup, ibuprofen, Rust) share no vocabulary with a corpus about
+dining halls and dorms, so I expect them to be far from every chunk. The one I
+am least sure of is ibuprofen, because the corpus has a health centre post. 4 of
+5 leaves room for that one. I will fill in the measured gap after Milestone 4.
 
 ---
 
@@ -69,11 +80,19 @@ in at least 4 of 5 tries.
        - "No chunk is shorter than 200 characters, since anything below that
           in my corpus turned out to be a heading with no content under it." -->
 
+Every chunk begins with its document's title line, and no chunk ends in the
+middle of a sentence. Checked across all chunks, not a sample: zero violations.
+
 
 
 **Why this target:**
-
-
+Reading the documents, the first line of each is a title ("Laundry in Fenwick
+Court") and the body often never repeats it: the Fenwick, Calder, Aldridge,
+Innisfree, Morrow, Brewhouse and Tamsin laundry posts share the sentence "eight
+washers and six dryers for the building". If a chunk lost its title, it could
+not be told apart from six others. And every document is under 700 characters,
+so there is no reason to cut a sentence anywhere. Zero, not "most", because
+both failures are mechanical and a chunker can simply not do them.
 
 ---
 
@@ -87,11 +106,15 @@ in at least 4 of 5 tries.
      present — anything, as long as it names a number or an observable
      outcome. -->
 
-
+Source attribution is correct, not just present: for at least 4 of my 5 test
+questions, the source file the answer cites is one that actually contains my
+`expects` phrase.
 
 **Why this target:**
-
-
+Criterion 2 only checks that a source is named. With seven near-identical
+laundry posts and three posts per course, a wrong source is easy to name, and a
+student who follows a wrong citation is worse off than one who gets none. 4 of 5
+mirrors criterion 1 because a citation cannot be right if retrieval missed.
 
 ---
 

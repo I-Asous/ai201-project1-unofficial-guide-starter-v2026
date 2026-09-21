@@ -22,12 +22,21 @@ names a target of "4 of 5", and four of three is not a thing.
 """
 
 QUESTIONS = [
-    # {"question": "...", "expects": "..."},
-    {"question": "", "expects": ""},
-    {"question": "", "expects": ""},
-    {"question": "", "expects": ""},
-    {"question": "", "expects": ""},
-    {"question": "", "expects": ""},
+    # Housing lottery: the answer contradicts the obvious assumption ("random").
+    {"question": "Is the housing lottery random for seniors?",
+     "expects": "credit hours"},
+    # Near-duplicate trap: seven buildings have laundry posts that read almost
+    # identically. Only the price tells them apart.
+    {"question": "How much does a dryer cost in Aldridge Hall?",
+     "expects": "$1.50"},
+    {"question": "How long is the wait at Kestrel Commons around 12:30?",
+     "expects": "20 to 25 minutes"},
+    # The detail the document itself calls "the part nobody mentions".
+    {"question": "How late in the semester can I choose pass/fail for a course?",
+     "expects": "week eight"},
+    # Three posts exist for every course (overview, exams, workload).
+    {"question": "How many hours a week does CS 340 Databases take near the end of the term?",
+     "expects": "15"},
 ]
 
 # Questions from a different world entirely. Your gate should refuse all five.
