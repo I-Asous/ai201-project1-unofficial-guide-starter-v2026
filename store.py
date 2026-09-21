@@ -66,7 +66,17 @@ class _OnnxEmbedder:
         self._ef = ONNXMiniLM_L6_V2()
 
     def encode(self, texts, show_progress_bar: bool = False):
-        return [vector.tolist() for vector in self._ef(list(texts))]
+        # Chroma's embedder takes 32 texts per pass and pads every one to 256
+        # tokens, which peaked at ~780 MB on a CPU-only Linux box — an
+        # out-of-memory kill on a 512 MB host. Peak memory tracks batch size
+        # (32 -> 781 MB, 8 -> 366 MB, 4 -> 285 MB) and the vectors come out
+        # bit-for-bit identical, so this only changes how much RAM it needs.
+        texts = list(texts)
+        size = config.EMBED_BATCH_SIZE
+        vectors = []
+        for i in range(0, len(texts), size):
+            vectors.extend(v.tolist() for v in self._ef(texts[i : i + size]))
+        return vectors
 
 
 def _sentence_transformer(name: str):

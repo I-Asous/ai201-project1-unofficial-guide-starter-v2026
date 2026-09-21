@@ -75,6 +75,11 @@ THRESHOLD = 0.7
 # which needs `pip install 'sentence-transformers>=3.4,<3.5'` first. store.py
 # says so with a real error message rather than a stack trace if you forget.
 EMBEDDING_MODEL = "all-MiniLM-L6-v2"
+
+# Texts embedded per pass. Small on purpose: memory use grows with this number
+# and a 512 MB host runs out at Chroma's default of 32. Same vectors either
+# way; only the RAM and the speed change. See store.py::_OnnxEmbedder.
+EMBED_BATCH_SIZE = 4
 MODEL = os.getenv("AI201_MODEL", "gemini-3.5-flash-lite")
 
 

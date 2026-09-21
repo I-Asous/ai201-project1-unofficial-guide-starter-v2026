@@ -74,6 +74,14 @@ def _ms(start: float, end: float | None = None) -> float:
     return round(((end if end is not None else time.perf_counter()) - start) * 1000, 1)
 
 
+def _peak_rss_mb() -> float:
+    """Highest memory this process has used so far, in MB (Linux reports KB, macOS bytes)."""
+    import resource
+
+    peak = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+    return round(peak / (1e6 if sys.platform == "darwin" else 1e3), 1)
+
+
 def ensure_index() -> None:
     """Build the index if this machine doesn't have one yet.
 
@@ -85,7 +93,7 @@ def ensure_index() -> None:
     from store import build_index, index_exists
 
     if index_exists(config.CORPUS):
-        _emit("index", action="found", corpus=config.CORPUS)
+        _emit("index", action="found", corpus=config.CORPUS, peak_rss_mb=_peak_rss_mb())
         return
     from chunker import split_documents
     from ingest import load_documents
@@ -93,7 +101,8 @@ def ensure_index() -> None:
     started = time.perf_counter()
     chunks = split_documents(load_documents(config.CORPUS))
     build_index(chunks, corpus=config.CORPUS)
-    _emit("index", action="built", corpus=config.CORPUS, chunks=len(chunks), build_ms=_ms(started))
+    _emit("index", action="built", corpus=config.CORPUS, chunks=len(chunks),
+          build_ms=_ms(started), peak_rss_mb=_peak_rss_mb())
 
 
 @app.before_request
@@ -112,6 +121,7 @@ def _log_request(response):
         "path": request.path,
         "status": response.status_code,
         "total_ms": _ms(g.t0) if "t0" in g else None,
+        "peak_rss_mb": _peak_rss_mb(),
         **g.get("stages", {}),
         **g.get("outcome", {}),
     }
