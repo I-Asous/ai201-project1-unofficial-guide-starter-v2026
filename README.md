@@ -426,3 +426,55 @@ Two smaller caveats:
 I also changed `REQUESTS_PER_MINUTE` in `config.py` from 30 to 12 during this
 unit, because my free-tier key returned 429 at 30 (its limit is 15 per minute).
 That is a fix to the environment, not part of the improvement above.
+
+---
+
+# Unit 9
+
+## What I Added
+
+`serve.py` now logs one JSON line per request to stdout, and builds its own index
+on startup. Nothing in the pipeline changed: the timing uses the `on_gate` and
+`on_prompt` callbacks that `app.py::ask_pipeline` already exposes, so retrieval
+and generation are timed separately without touching `app.py`.
+
+Each request line has: `request_id` (also returned in the `X-Request-Id`
+header, so a user can quote it), `method`, `path`, `status`, `total_ms`,
+`retrieval_ms`, and `generation_ms`. `/ask` lines add the question (first 200
+characters), whether it was `refused`, `best_distance`, and `sources`. A failure
+logs the exception type and message instead. Startup logs an `index` line saying
+whether the index was found or built, and how long a build took.
+
+Also added: `Procfile` (`gunicorn serve:app --workers 1 --timeout 120`). One
+worker because each worker would load its own copy of the embedding model, and
+`generate.py`'s rate limiter is per process, so two workers would double the
+requests per minute against a quota that is per key.
+
+## What the Log Showed
+
+Real lines from a local `gunicorn` run, started with no index on disk:
+
+```
+{"event": "index", "action": "built", "corpus": "campus_life", "chunks": 88, "build_ms": 8920.4}
+{"event": "request", "method": "POST", "path": "/ask", "status": 200, "total_ms": 1188.7, "retrieval_ms": 187.0, "generation_ms": 1001.6, "question": "is the housing lottery random for seniors?", "refused": false, "best_distance": 0.1936, ...}
+{"event": "request", "method": "POST", "path": "/ask", "status": 200, "total_ms": 763.4, "retrieval_ms": 61.8, "generation_ms": 701.3, "question": "how much does a dryer cost in Aldridge Hall?", "refused": false, ...}
+{"event": "request", "method": "POST", "path": "/ask", "status": 200, "total_ms": 59.8, "retrieval_ms": 59.8, "question": "What is the capital of Mongolia?", "refused": true, "best_distance": 0.8246, "sources": []}
+{"event": "request", "method": "POST", "path": "/ask", "status": 500, "total_ms": 0.2, "retrieval_ms": 0.1, "error": "RuntimeError: Still rate limited after 4 attempts"}
+```
+
+- **Generation is most of a request:** 0.7 to 1.0 s of the 0.8 to 1.2 s. Retrieval is 60 to 190 ms, and the first one is the slowest because the embedding model is warming up.
+- **A refused question costs about 60 ms and no model call.** It has `retrieval_ms` and no `generation_ms`, which is how the log shows the gate saving a call.
+- **The cold start is the index build:** about 9 s here, before the first request can be served. A host's disk doesn't survive a restart, so this happens on every restart, and on the free tier it stacks on top of the wake-up delay.
+- **The 500 is a rate limit.** `generate.py` raises after four retries and `serve.py` returns it as a 500. A 429 would be more honest. I left that alone.
+
+These are single local runs on one machine (three real requests), so they show
+where the time goes, not what a hosted service will measure.
+
+## Not Done
+
+**I have not deployed it.** Deploying means creating an account or project on a
+hosting service and putting my Gemini key into its environment settings, which I
+haven't done. To deploy: create a web service from this repo, set the start
+command to the `Procfile` line, set `GEMINI_API_KEY` as an environment
+variable (not in the repo), and check `GET /health` returns `"index_ready": true`.
+The service URL goes here once it exists: _not deployed yet_.
