@@ -470,11 +470,64 @@ Real lines from a local `gunicorn` run, started with no index on disk:
 These are single local runs on one machine (three real requests), so they show
 where the time goes, not what a hosted service will measure.
 
-## Not Done
+## Deployed
 
-**I have not deployed it.** Deploying means creating an account or project on a
-hosting service and putting my Gemini key into its environment settings, which I
-haven't done. To deploy: create a web service from this repo, set the start
-command to the `Procfile` line, set `GEMINI_API_KEY` as an environment
-variable (not in the repo), and check `GET /health` returns `"index_ready": true`.
-The service URL goes here once it exists: _not deployed yet_.
+**Live at https://ai201-project1-unofficial-guide-starter-cina.onrender.com**
+(Render free tier, Python 3.12.8, `gunicorn serve:app --workers 1 --timeout 120`,
+`GEMINI_API_KEY` set as an environment variable on the host, not in the repo.)
+
+```
+curl https://ai201-project1-unofficial-guide-starter-cina.onrender.com/health
+curl -X POST https://ai201-project1-unofficial-guide-starter-cina.onrender.com/ask \
+  -H 'Content-Type: application/json' -d '{"question": "is the shuttle free"}'
+```
+
+Real output from the hosted service:
+
+```
+GET /health              -> {"corpus":"campus_life","detail":"ready","index_ready":true,"status":"ok"}   (200, 0.16 s)
+POST /ask "is the shuttle free"
+  -> "Yes, the campus shuttle is free if you have a student ID.  Source: transit_shuttle.txt"
+     best_distance 0.6479, threshold 0.7, refused false                                            (200, 1.0 s)
+POST /ask "What is the capital of Mongolia?"
+  -> "I don't have enough information about that."   best_distance 0.8246, refused true            (200, 0.5 s)
+POST /ask {}             -> {"error":"Send JSON with a question in it, ..."}                       (400)
+```
+
+The shuttle answer is the question the unit 2 cutoff change fixed: at the old
+0.6 cutoff the gate refused it. Startup line from the host's log:
+
+```
+{"event": "index", "action": "built", "corpus": "campus_life", "chunks": 88, "build_ms": 200100.7, "peak_rss_mb": 299.3}
+```
+
+- **Cold start is slow:** building the index took 200 s on the free instance
+  (0.5 CPU, plus the 79 MB model download), against 4 s on my laptop. The port
+  isn't open during that time. The first `/ask` after a deploy took 9.3 s; later
+  ones took 0.5 to 1 s.
+- **Memory:** peak 299 MB, under the 512 MB limit.
+
+## What Went Wrong Getting It Deployed
+
+Two failures, both invisible on my laptop, and neither was the first thing I
+guessed:
+
+1. **`Exited with status 132`** (illegal instruction). Render built with Python
+   3.14, which `requirements.txt` rules out, so I pinned Python with a
+   `.python-version` file. That wasn't enough: on 3.13, `chroma-hnswlib` 0.7.6
+   has no prebuilt Linux wheel, so pip compiled it on Render's build machine,
+   and code compiled for one CPU crashed on another. Pinning 3.12.8 gets a
+   prebuilt wheel and the crash stopped. I also enabled `faulthandler` in
+   `serve.py` so a native crash prints the line that caused it.
+2. **`Out of memory (used over 512Mi)`.** Chroma's embedder processes 32 texts
+   per pass, padded to 256 tokens each; measured CPU-only, that peaked at about
+   780 MB. I embed 4 at a time now (`config.EMBED_BATCH_SIZE`), which peaked at
+   285 MB. The vectors are bit-for-bit identical at every batch size, and I
+   re-checked that every distance in this README is unchanged after re-indexing.
+   My first local measurement (9 GB) was wildly wrong because macOS was using
+   CoreML, which Render doesn't have; I only found that out by restricting the
+   model to the CPU provider to match Render.
+
+Not done: I did not load-test it, and I have not read the server-side log line
+for an `/ask` request on the hosted service (the timings above are from my
+`curl`, not the log).

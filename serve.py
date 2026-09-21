@@ -130,6 +130,18 @@ def _log_request(response):
     return response
 
 
+@app.get("/")
+def index():
+    """Hosts probe `/` to see whether anything is listening. Answer it, rather than 404 in the log."""
+    return jsonify(
+        {
+            "service": "The Unofficial Guide",
+            "corpus": config.CORPUS,
+            "routes": {"GET /health": "is it up, is there an index", "POST /ask": '{"question": "..."}'},
+        }
+    )
+
+
 @app.get("/health")
 def health():
     """Is the service up, and is there an index to search?
