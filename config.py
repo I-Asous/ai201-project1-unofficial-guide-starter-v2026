@@ -53,7 +53,14 @@ TOP_K = 5               # how many chunks to pull back per question
 # that 0.47-wide gap. It does NOT separate campus-adjacent questions the corpus
 # doesn't cover (tuition, gym: 0.46–0.57) from loosely worded ones it does
 # (0.40–0.52) — those overlap, and the prompt in generate.py is what catches them.
-THRESHOLD = 0.6
+#
+# Unit 2: raised 0.6 -> 0.7. Casual short queries score ~0.65 even against the
+# document that answers them ("is the shuttle free" -> transit_shuttle.txt at
+# 0.648, rank 1), so 0.6 refused answerable questions. The highest covered
+# question is 0.648 and the lowest clearly-foreign one is 0.825; 0.7 is inside
+# that gap. Campus-adjacent uncovered questions in 0.6-0.7 now reach the model,
+# which the stress run showed declines them.
+THRESHOLD = 0.7
 
 
 # ─── Models ──────────────────────────────────────────────────────────────────
