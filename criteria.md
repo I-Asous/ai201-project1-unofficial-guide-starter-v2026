@@ -126,6 +126,42 @@ laundry posts and three posts per course, a wrong source is easy to name, and a
 student who follows a wrong citation is worse off than one who gets none. 4 of 5
 mirrors criterion 1 because a citation cannot be right if retrieval missed.
 
+
+---
+
+## Added in unit 2 (additions, not revisions — criteria 1 to 5 above are unchanged)
+
+The first run met all five criteria, in all three runs. That says my five
+targets were easy for this corpus, not that the system is done: criterion 3 only
+uses clearly foreign questions (Mongolia, Rust), which any relevance gate
+handles. The realistic failure is a question about campus life that the
+documents happen not to cover, and the reverse, a casual question they do
+cover that the gate refuses. Two more criteria, measured end to end with
+`run_stress.py` on the two sets at the bottom of `questions.py`, three runs each.
+
+### 6. Uncovered campus questions are declined
+
+For at least 9 of the 10 questions in `ADJACENT_UNCOVERED` ("How much is tuition
+per semester?", "Is there a gym on campus?"), the system declines, either
+because the gate refuses or because the model says the documents don't cover it.
+
+**Why this target:** The gate is one distance cutoff and I measured these
+questions at 0.46 to 0.79, straddling 0.6, so the gate alone can't do it and I
+expect the prompt to carry some. 9 of 10, not 10, because "Are pets allowed in
+the dorms?" is close enough to real housing posts that I'd forgive one slip.
+
+### 7. Casual questions the documents cover are answered
+
+For 10 of the 10 questions in `LOOSE_COVERED` ("is the shuttle free", "cheap way
+to get books"), the system gives an answer containing the fact in `expects`.
+
+**Why this target:** A guide that says "I don't have enough information" about
+something it does know is failing silently, and nobody can tell from the
+refusal that the answer existed. I already measured one of these ("is the
+shuttle free") at 0.648, over the 0.6 cutoff, so I expect a miss here. I'm
+setting 10 of 10 rather than 9 because every false refusal is a real student
+who leaves without the answer.
+
 ---
 
 <!-- ─────────────────────────────────────────────────────────────────────────

@@ -58,3 +58,39 @@ OUT_OF_SCOPE = [
 def answered() -> list[dict]:
     """The questions you've actually filled in."""
     return [q for q in QUESTIONS if q.get("question", "").strip()]
+
+
+# ─── Unit 2 stress sets ──────────────────────────────────────────────────────
+# Added in unit 2 after the first run met every criterion: the five criteria
+# above turned out to be easy for this corpus. The out-of-scope questions are
+# all clearly foreign, which is the case a relevance gate handles trivially.
+# These two sets test the case that matters and that the gate finds hard.
+
+# Campus questions the documents do NOT answer. The system should refuse.
+ADJACENT_UNCOVERED = [
+    "How much is tuition per semester?",
+    "Is there a gym on campus?",
+    "What time does the bookstore close on Sundays?",
+    "Which dorm has the best view?",
+    "How do I join the rowing team?",
+    "How do I apply for a scholarship?",
+    "Is there a swimming pool on campus?",
+    "Who is the president of the university?",
+    "How do I get a bike repaired on campus?",
+    "Are pets allowed in the dorms?",
+]
+
+# Loosely worded questions the documents DO answer. The system should answer.
+# `expects` may list alternatives separated by "|"; any one counts.
+LOOSE_COVERED = [
+    {"question": "where can i get food late at night", "expects": "Verrill"},
+    {"question": "anything i should know before winter", "expects": "layers"},
+    {"question": "cheap way to get books", "expects": "reserve|price-match"},
+    {"question": "how bad is the workload for bio", "expects": "9 to 11"},
+    {"question": "which dorm is closest to the science labs", "expects": "Aldridge"},
+    {"question": "is the shuttle free", "expects": "student ID"},
+    {"question": "can i study at the library late", "expects": "2am"},
+    {"question": "what happens to leftover printing money", "expects": "not roll over|does not roll"},
+    {"question": "how do i get my transcript for free", "expects": "unofficial"},
+    {"question": "is there anywhere on campus with real coffee", "expects": "espresso|Ridgeway"},
+]
