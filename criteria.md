@@ -64,6 +64,16 @@ dining halls and dorms, so I expect them to be far from every chunk. The one I
 am least sure of is ibuprofen, because the corpus has a health centre post. 4 of
 5 leaves room for that one. I will fill in the measured gap after Milestone 4.
 
+> **Measured in Milestone 4 (note, not a revision):** best distances were
+> 0.82 to 0.93 for the five out-of-scope questions against 0.19 to 0.36 for my
+> five test questions, a clean gap of about 0.47, so 0.6 sits in it and I expect
+> 5 of 5, ibuprofen included (0.84, nearest chunk was a textbook post, not the
+> health centre). The catch: campus-adjacent questions the corpus doesn't cover
+> ("How much is tuition per semester?" 0.527, "Is there a gym on campus?" 0.570)
+> score as close as loosely worded questions it does cover (0.40 to 0.52), so
+> those pass the gate and rely on the prompt to decline. This criterion doesn't
+> test them, which is a limit of the criterion.
+
 ---
 
 ## 4. Something about your chunks

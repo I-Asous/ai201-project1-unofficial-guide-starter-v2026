@@ -47,6 +47,12 @@ TOP_K = 5               # how many chunks to pull back per question
 # 0.6 is a reasonable starting point, not a right answer. Milestone 4 has you
 # measure your own two groups of distances and put the cutoff in the gap.
 # Most corpora land somewhere between 0.45 and 0.75.
+#
+# Measured on campus_life (Milestone 4): my five test questions have best
+# distances 0.19–0.36, the five OUT_OF_SCOPE questions 0.82–0.93. 0.6 sits in
+# that 0.47-wide gap. It does NOT separate campus-adjacent questions the corpus
+# doesn't cover (tuition, gym: 0.46–0.57) from loosely worded ones it does
+# (0.40–0.52) — those overlap, and the prompt in generate.py is what catches them.
 THRESHOLD = 0.6
 
 
