@@ -27,6 +27,7 @@ On startup it also builds the index if there isn't one, because a host's disk
 doesn't survive a restart.
 """
 
+import faulthandler
 import json
 import logging
 import os
@@ -37,6 +38,11 @@ import uuid
 from flask import Flask, g, jsonify, request
 
 import config
+
+# A crash inside a compiled dependency (an "illegal instruction" from a library
+# built for a different CPU, say) would otherwise exit with a bare status code
+# and no Python traceback. This makes it print which line was running.
+faulthandler.enable()
 
 app = Flask(__name__)
 
