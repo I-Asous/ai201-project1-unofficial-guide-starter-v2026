@@ -472,7 +472,8 @@ where the time goes, not what a hosted service will measure.
 
 ## Deployed
 
-**Live at https://ai201-project1-unofficial-guide-starter-cina.onrender.com**
+**Live at https://ai201-project1-unofficial-guide-starter-cina.onrender.com/health**
+(an API, not a website: `/health` shows the status, `POST /ask` answers questions)
 (Render free tier, Python 3.12.8, `gunicorn serve:app --workers 1 --timeout 120`,
 `GEMINI_API_KEY` set as an environment variable on the host, not in the repo.)
 
