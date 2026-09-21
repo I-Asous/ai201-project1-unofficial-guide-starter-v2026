@@ -397,9 +397,9 @@ the time to run either option.
 Two smaller caveats:
 
 - **My stress sets are small and I looked at them before choosing the fix.**
-  I had already seen the distances for five of the ten uncovered questions and
-  the shuttle question when I picked 0.7, so the improvement is partly tuned to
-  them. Ten questions per set is enough to show the mechanism, not to promise
+  I had already measured the retrieval distances for all twenty of them, the
+  shuttle question included, before I picked 0.7, so the improvement is partly
+  tuned to them. Ten questions per set is enough to show the mechanism, not to promise
   0.7 is right for questions I haven't seen.
 - **Criterion 6 depends on phrase matching.** `run_stress.py` decides "the
   model declined" from a list of phrases. I read the answers for every question
