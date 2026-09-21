@@ -22,6 +22,7 @@ to it, write down what you saw, and move on. That's a real observation about
 your pipeline, not giving up.
 """
 
+import re
 from dataclasses import dataclass
 
 import config
@@ -80,24 +81,103 @@ def fallback_split(
     return chunks
 
 
+_SENTENCE_END = re.compile(r"(?<=[.!?])\s+")
+
+
+def _split_title(text: str) -> tuple[str, str]:
+    """
+    Separate a document's title line from its body.
+
+    Every document in campus_life opens with a short title line ("Laundry in
+    Fenwick Court") followed by a blank line. The body often never repeats it,
+    so a chunk that loses the title can't be told apart from its neighbours.
+    Returns ("", text) when the first line doesn't look like a title.
+    """
+    head, sep, rest = text.partition("\n\n")
+    if sep and "\n" not in head and len(head) <= 100 and not head.endswith((".", "!", "?")):
+        return head, rest
+    return "", text
+
+
+def _pack(units: list[tuple[str, str]], budget: int) -> list[str]:
+    """
+    Greedily join (text, separator-before) units into pieces no longer than
+    budget. Never cuts a unit.
+    """
+    pieces: list[str] = []
+    current = ""
+    for text, sep in units:
+        candidate = f"{current}{sep}{text}" if current else text
+        if current and len(candidate) > budget:
+            pieces.append(current)
+            current = text
+        else:
+            current = candidate
+    if current:
+        pieces.append(current)
+    return pieces
+
+
 def split_documents(documents: list[Document]) -> list[Chunk]:
     """
-    Split documents into chunks. ⚠️ REPLACE THE BODY OF THIS IN MILESTONE 3.
+    Split on the document's own structure: whole post, else paragraph, else
+    sentence. Every chunk carries its document's title line.
 
-    Right now it just calls the fallback. That is the plain, generic behaviour
-    the brief is talking about.
+    - A document that fits in config.CHUNK_SIZE stays ONE chunk. In campus_life
+      that is every document (the longest is well under 700 characters), so the
+      post is the unit of retrieval and no thought is ever cut.
+    - A longer document is packed paragraph by paragraph. A paragraph that is
+      itself too long is packed sentence by sentence. Only a single sentence
+      longer than the budget is ever cut mid-sentence, and it is cut on a word.
+    - Every piece after the split is prefixed with the title, so "Machines take
+      $1.75 wash" is never separated from "Laundry in Aldridge Hall".
+    - Overlap is 0. Chunks end on paragraph or sentence boundaries, so there is
+      no half-thought to repeat; the repeated title is the shared context.
 
-    When you write your own strategy, set `produced_by` to
-    "chunker.py::split_documents" so your README's Sample Chunks section names
-    the right function. `app.py chunks` prints that string for you.
-
-    Things worth thinking about before you write any code:
-      - Are your documents short posts or long guides?
-      - Is the useful information in one sentence, or spread over a paragraph?
-      - Would splitting on paragraph breaks keep more thoughts intact than
-        splitting on a character count?
+    Chunks are marked produced_by "chunker.py::split_documents".
     """
-    return fallback_split(documents)
+    size = config.CHUNK_SIZE
+    chunks: list[Chunk] = []
+
+    for doc in documents:
+        if len(doc.text) <= size:
+            pieces = [doc.text]
+        else:
+            title, body = _split_title(doc.text)
+            prefix = f"{title}\n\n" if title else ""
+            budget = size - len(prefix)
+
+            paragraphs = [p.strip() for p in body.split("\n\n") if p.strip()]
+            units: list[tuple[str, str]] = []
+            for para in paragraphs:
+                if len(para) <= budget:
+                    units.append((para, "\n\n"))
+                    continue
+                sep = "\n\n"        # first sentence starts a paragraph, rest continue it
+                for sentence in (x for x in _SENTENCE_END.split(para) if x):
+                    while len(sentence) > budget:      # last resort: cut on a word
+                        cut = sentence.rfind(" ", 0, budget)
+                        cut = cut if cut > 0 else budget
+                        units.append((sentence[:cut].strip(), sep))
+                        sep = " "
+                        sentence = sentence[cut:].strip()
+                    if sentence:
+                        units.append((sentence, sep))
+                        sep = " "
+
+            pieces = [prefix + p for p in _pack(units, budget)]
+
+        for i, piece in enumerate(pieces):
+            chunks.append(
+                Chunk(
+                    text=piece,
+                    source=doc.source,
+                    index=i,
+                    produced_by="chunker.py::split_documents",
+                )
+            )
+
+    return chunks
 
 
 def describe(chunks: list[Chunk]) -> str:
@@ -116,5 +196,16 @@ def describe(chunks: list[Chunk]) -> str:
 if __name__ == "__main__":
     from ingest import load_documents
 
-    chunks = split_documents(load_documents())
+    docs = load_documents()
+    chunks = split_documents(docs)
     print(describe(chunks))
+
+    # Criterion 4: every chunk starts with its document's title line and ends
+    # on a sentence boundary. Checked across all chunks, not a sample.
+    titles = {d.source: _split_title(d.text)[0] for d in docs}
+    no_title = [c.label for c in chunks if not c.text.startswith(titles[c.source])]
+    mid_sentence = [c.label for c in chunks if not c.text.rstrip().endswith((".", "!", "?", ")", '"'))]
+    print(f"criterion 4: {len(no_title)} chunks missing their title, "
+          f"{len(mid_sentence)} ending mid-sentence")
+    for label in no_title + mid_sentence:
+        print(f"  - {label}")
