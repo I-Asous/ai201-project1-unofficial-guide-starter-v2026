@@ -40,7 +40,6 @@ from pathlib import Path
 import config
 import questions as qs
 
-
 def load_scorer():
     """Use scorer.py if the student has built it. Otherwise run unscored."""
     try:
